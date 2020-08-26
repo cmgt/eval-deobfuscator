@@ -1,5 +1,5 @@
 ## eval-deobfuscator
-A deobfuscator based upon ```eval```ing deobfuscation functions.   This is done through NodeJS [VMs](https://nodejs.org/api/vm.html).
+A deobfuscator based on ```eval```ing deobfuscation functions.   This is done through NodeJS [VMs](https://nodejs.org/api/vm.html).
 
 ### Run
 
