@@ -17,7 +17,7 @@ Currently supported and tested scripts (more may work if they use any of the obf
     * Geocomply
     * Shape Security / F5
 
-Multiple different generic deobfuscators supported:
+Multiple different generic obfuscators supported:
     
     * Array literal subsitution
     * Obfuscator.io base64
