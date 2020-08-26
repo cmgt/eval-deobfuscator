@@ -269,12 +269,14 @@ function transformNodesIntoValues(nodes, context) {
         var type = node.type;
         if (type === "IdentifierExpression") {
             resultArray.push(context[node.name]);
-        } else if (type === "LiteralNumericExpression" || type === "LiteralStringExpression") {
+        } else if (
+            type === "LiteralNumericExpression" ||
+            type === "LiteralStringExpression" ||
+            type === "LiteralBooleanExpression"
+        ) {
             resultArray.push(node.value);
         } else if (type === "LiteralNullExpression") {
             resultArray.push(null);
-        } else if (type === "LiteralBooleanExpression") {
-            resultArray.push(node.value);
         }
     });
     return resultArray;
