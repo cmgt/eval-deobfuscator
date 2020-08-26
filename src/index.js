@@ -37,6 +37,13 @@ scriptInfo.forEach((currentScriptInfo) => {
     var fileContents = fs.readFileSync(filesDirectory + currentScriptInfo.name, "utf8");
     var script = refactor(fileContents);
     currentScriptInfo.func(script);
-
     fs.writeFileSync(outputDirectory + currentScriptInfo.name, script.print());
+    console.log(
+        "Deobfuscated " +
+            filesDirectory +
+            currentScriptInfo.name +
+            " and saved the output to " +
+            outputDirectory +
+            currentScriptInfo.name
+    );
 });
