@@ -158,11 +158,12 @@ function appropriateLiteral(currentNode, value) {
             value: value
         });
     } else if (type === "boolean") {
-        return new Shift.LiteralStringExpression({
+        return new Shift.LiteralBooleanExpression({
             value: value
         });
-        return currentNode;
     }
+    // otherwise just return existing node
+    return currentNode;
 }
 
 /*
