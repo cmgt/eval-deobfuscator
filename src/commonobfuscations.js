@@ -53,9 +53,9 @@ function undoObfuscatorIoLiteralSubsitution(script, scriptContext) {
     var deobfuscationFunctionName = deobfuscationFunctionQuery.nodes[0].binding.name;
 
     // evaluate the obfuscated string array and deobfuscation function assignment
-    vm.runInContext(util.getNodeCode(stringArrayQuery.nodes[0]), scriptContext);
-    vm.runInContext(util.getNodeCode(deobfuscationFunctionQuery.nodes[0]), scriptContext);
-    vm.runInContext(util.getNodeCode(shifterFunctionQuery.nodes[0]), scriptContext);
+    vm.runInContext(util.getFirstCode(stringArrayQuery), scriptContext);
+    vm.runInContext(util.getFirstCode(deobfuscationFunctionQuery), scriptContext);
+    vm.runInContext(util.getFirstCode(shifterFunctionQuery), scriptContext);
 
     // Replace deobfuscation calls calls with real value
     script
@@ -96,8 +96,8 @@ function undoObfuscatorIoBase64(script, scriptContext) {
     var deobfuscationFunctionName = deobfuscationFunctionQuery.nodes[0].binding.name;
 
     // evaluate the obfuscated string array and deobfuscation function assignment
-    vm.runInContext(util.getNodeCode(stringArrayQuery.nodes[0]), scriptContext);
-    vm.runInContext(util.getNodeCode(deobfuscationFunctionQuery.nodes[0]), scriptContext);
+    vm.runInContext(util.getFirstCode(stringArrayQuery), scriptContext);
+    vm.runInContext(util.getFirstCode(deobfuscationFunctionQuery), scriptContext);
     // Replace deobfuscation calls calls with real value
     script
         .query(
@@ -122,26 +122,47 @@ This has been tested with ArkoseLabs and Geocomply (they both had slight variati
 function undoJscramblerString(script, scriptContext) {
     var combinedDeobfuscatorCode = "";
 
+    // the first object property assignment is the string deobfuscator object
+    const firstPropertyAssignment = script
+        .query(`StaticMemberAssignmentTarget[object.type="IdentifierExpression"]`)
+        .first();
+    if (!firstPropertyAssignment.nodes.length) return;
+    const deobfuscatorObjectName = firstPropertyAssignment.nodes[0].object.name;
+    const deobfuscatorObjectInitializer = script.query(
+        `FunctionDeclaration[name.name=${JSON.stringify(deobfuscatorObjectName)}]`
+    );
+    if (deobfuscatorObjectInitializer.nodes.length) {
+        combinedDeobfuscatorCode += util.getFirstCode(deobfuscatorObjectInitializer);
+    }
+    // we have to do this before the rest of the assignments because the modifier functions depend on it being defined
+
+    // newer versions of jscrambler do this
+    const objectWindowAssignmentQuery = script.query(
+        `Script > ExpressionStatement[expression.type="AssignmentExpression"][expression.binding.type="StaticMemberAssignmentTarget"][expression.binding.object.type="IdentifierExpression"][expression.expression.type="IdentifierExpression"][expression.expression.name="window"]`
+    );
+    combinedDeobfuscatorCode += util.getFirstCode(objectWindowAssignmentQuery);
+
     // i'm not sure what these calls exactly do but without them the deobfuscator object calls do not work, they are the three calls at the top of arkoselabs.js that look like x(y());
     const modifierFunctionsQuery = script.query(
-        `Script > ExpressionStatement[expression.type="CallExpression"][expression.callee.type="IdentifierExpression"][expression.arguments.length=1][expression.arguments.0.type="CallExpression"][expression.arguments.0.callee.type="IdentifierExpression"][expression.arguments.0.arguments.length=0]`
+        `Script > ExpressionStatement[expression.type="CallExpression"][expression.callee.type="IdentifierExpression"][expression.arguments.length=1]`
     );
     modifierFunctionsQuery.forEach((node) => {
-        callerFunctionCodeQuery = script.query(
-            `FunctionDeclaration[isAsync=false][isGenerator=false][name.name=${JSON.stringify(
-                node.expression.callee.name
-            )}][params.type="FormalParameters"][params.items.length=0]`
-        );
-        subCallerFunctionCodeQuery = script.query(
-            `FunctionDeclaration[isAsync=false][isGenerator=false][name.name=${JSON.stringify(
-                node.expression.arguments[0].callee.name
-            )}][params.type="FormalParameters"][params.items.length=0]`
-        );
-
-        if (!callerFunctionCodeQuery.length || !subCallerFunctionCodeQuery.length) return;
-
-        combinedDeobfuscatorCode += util.getNodeCode(callerFunctionCodeQuery.nodes[0]);
-        combinedDeobfuscatorCode += util.getNodeCode(subCallerFunctionCodeQuery.nodes[0]);
+        try {
+            callerFunctionCodeQuery = script.query(
+                `FunctionDeclaration[isAsync=false][isGenerator=false][name.name=${JSON.stringify(
+                    node.expression.callee.name
+                )}][params.type="FormalParameters"]`
+            );
+            combinedDeobfuscatorCode += util.getFirstCode(callerFunctionCodeQuery);
+        } catch {}
+        try {
+            subCallerFunctionCodeQuery = script.query(
+                `FunctionDeclaration[isAsync=false][isGenerator=false][name.name=${JSON.stringify(
+                    node.expression.arguments[0].callee.name
+                )}][params.type="FormalParameters"]`
+            );
+            combinedDeobfuscatorCode += util.getFirstCode(subCallerFunctionCodeQuery);
+        } catch {}
         combinedDeobfuscatorCode += util.getNodeCode(node);
     });
 
@@ -163,18 +184,11 @@ function undoJscramblerString(script, scriptContext) {
             )
             .first();
         if (longStringFunction.nodes.length) {
-            combinedDeobfuscatorCode += util.getNodeCode(longStringFunction.nodes[0]);
+            combinedDeobfuscatorCode += util.getFirstCode(longStringFunction);
             combinedDeobfuscatorCode += util.getNodeCode(longStringFunctionAssignmentNode);
         }
     }
 
-    // the first object property assignment is usually the string deobfuscator object
-    const firstPropertyAssignment = script
-        .query(`StaticMemberAssignmentTarget[object.type="IdentifierExpression"]`)
-        .first();
-    if (!firstPropertyAssignment.nodes.length) return;
-
-    const deobfuscatorObjectName = firstPropertyAssignment.nodes[0].object.name;
     // get all the functions of the deobfuscator object
     const deobfuscatorObjectAssignments = script.query(
         `AssignmentExpression[binding.type="StaticMemberAssignmentTarget"][binding.object.type="IdentifierExpression"][binding.object.name=${JSON.stringify(
@@ -188,16 +202,11 @@ function undoJscramblerString(script, scriptContext) {
         deobfuscatorFunctions.push(node.binding.property);
     });
 
-    const deobfuscatorObjectInitializer = script.query(
-        `FunctionDeclaration[name.name=${JSON.stringify(deobfuscatorObjectName)}]`
-    );
-    if (deobfuscatorObjectInitializer.nodes.length) {
-        combinedDeobfuscatorCode += util.getNodeCode(deobfuscatorObjectInitializer.nodes[0]);
-    }
-
     // run all the code that sets up the deobfuscator functions in a separate context
     vm.runInContext(combinedDeobfuscatorCode, scriptContext);
 
+    util.replacePlusStringWithIntegerValue(script); // needed for new versions of jscrambler
+    util.evaluateStringMathExpressions(script);
     deobfuscatorFunctions.forEach((currentFunctionName) => {
         var query = `CallExpression[callee.type="StaticMemberExpression"][callee.object.type="IdentifierExpression"][callee.property=${JSON.stringify(
             currentFunctionName

@@ -4,7 +4,7 @@ const commonobfuscations = require("./commonobfuscations");
 const Shift = require("shift-ast");
 
 function Datadome(script) {
-    commonobfuscations.undoObfuscatorIoBase64(script, vm.createContext({}));
+    commonobfuscations.undoObfuscatorIoBase64(script, util.createEmptyVmContext());
     util.convertComputedToStatic(script);
 }
 
@@ -20,14 +20,14 @@ function Akami(script) {
 
 function ArkoseLabs(script) {
     util.normalizeIdentifiers(script);
-    commonobfuscations.undoJscramblerString(script, vm.createContext({}));
+    commonobfuscations.undoJscramblerString(script, util.createEmptyVmContext());
     util.convertComputedToStatic(script);
 }
 
 function Geocomply(script) {
     util.normalizeIdentifiers(script);
     // this takes a while because they pass the numbers into the string deobfuscator as variable references so we have to go query for the variable
-    commonobfuscations.undoJscramblerString(script, vm.createContext({}));
+    commonobfuscations.undoJscramblerString(script, util.createEmptyVmContext());
     // these two functions also involve a bunch of querying and take a while too
     util.combinePlusEqualStrings(script);
     util.replaceStaticStrings(script);
@@ -42,7 +42,7 @@ function ShapeSecurity(script) {
     */
     util.normalizeIdentifiers(script);
 
-    var scriptContext = vm.createContext({});
+    var scriptContext = util.createEmptyVmContext();
 
     /* the deobfuscator functions are called like:
     a = 3
@@ -138,11 +138,14 @@ function ShapeSecurity(script) {
     }
 }
 
+function PerimeterX(script) {}
+
 module.exports = {
     Datadome: Datadome,
     Distil: Distil,
     Akami: Akami,
     ArkoseLabs: ArkoseLabs,
     Geocomply: Geocomply,
-    ShapeSecurity: ShapeSecurity
+    ShapeSecurity: ShapeSecurity,
+    PerimeterX: PerimeterX
 };

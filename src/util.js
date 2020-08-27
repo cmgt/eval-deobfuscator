@@ -16,6 +16,20 @@ function findOne(haystack, arr) {
     });
 }
 
+function createEmptyVmContext() {
+    // jscrambler needs window
+    initialContext = {};
+    initialContext.window = initialContext;
+    initialContext.window.globalThis = initialContext;
+
+    return vm.createContext(initialContext);
+}
+
+/* Evaluate a math expression with string operators */
+function comparator(operatorString, value1, value2) {
+    return eval(`"` + value1 + `"` + operatorString + value2);
+}
+
 function normalizeIdentifiers(script) {
     const lookupTable = script.session.globalSession.getLookupTable();
     const idGenerator = new IdGenerator();
@@ -33,8 +47,17 @@ function renameScope(scope, idGenerator) {
 }
 
 function getNodeCode(node) {
-    const generator = new shiftCodegen.MinimalCodeGen();
+    // const generator = new shiftCodegen.MinimalCodeGen();
+    const generator = new shiftCodegen.FormattedCodeGen(); // DEV
     return shiftCodegen.default(node, generator) + "\n";
+}
+
+function getFirstCode(query) {
+    if (query.nodes.length) {
+        return getNodeCode(query.nodes[0]);
+    } else {
+        return "";
+    }
 }
 
 // Replaces array literal references with their real values.  Stolen from mass-beautifier.
@@ -83,6 +106,40 @@ function convertComputedToStatic(script) {
             });
             return shiftValidator.default(replacement) ? replacement : node;
         });
+}
+
+/*
+This function turns strings prefixed with + into integers.
+For instance, +"2" becomes 2.
+*/
+function replacePlusStringWithIntegerValue(script) {
+    script
+        .query(`UnaryExpression[operator="+"][operand.type="LiteralStringExpression"]`)
+        .replace((node) => {
+            return new Shift.LiteralNumericExpression({
+                value: node.operand.value
+            });
+        });
+}
+
+function evaluateStringMathExpressions(script) {
+    /*
+    Replace complex math expressions like "16" >> 1694370784 or "2" | 2
+    */
+    replaceRecursive(
+        script,
+        `BinaryExpression[left.type="LiteralStringExpression"][right.type="LiteralNumericExpression"]`,
+
+        (node) => {
+            return new Shift.LiteralNumericExpression({
+                value: eval(
+                    JSON.stringify(node.left.value) +
+                        node.operator +
+                        JSON.stringify(node.right.value)
+                )
+            });
+        }
+    );
 }
 
 /*
@@ -288,10 +345,14 @@ module.exports = {
     replaceRecursive: replaceRecursive,
     convertComputedToStatic: convertComputedToStatic,
     getNodeCode: getNodeCode,
+    getFirstCode: getFirstCode,
     appropriateLiteral: appropriateLiteral,
     combinePlusEqualStrings: combinePlusEqualStrings,
     replaceStaticStrings: replaceStaticStrings,
     normalizeIdentifiers: normalizeIdentifiers,
     transformNodesIntoValues: transformNodesIntoValues,
-    findOne: findOne
+    findOne: findOne,
+    createEmptyVmContext: createEmptyVmContext,
+    replacePlusStringWithIntegerValue: replacePlusStringWithIntegerValue,
+    evaluateStringMathExpressions: evaluateStringMathExpressions
 };
