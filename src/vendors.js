@@ -201,7 +201,6 @@ function PerimeterX(script) {
             `FunctionDeclaration[isAsync=false][isGenerator=false][name.type="BindingIdentifier"][params.type="FormalParameters"][params.items.length=1][body.statements.length=1][body.statements.0.type="ReturnStatement"][body.statements.0.expression.type="ConditionalExpression"][body.statements.0.expression.test.left.value="function"][body.statements.0.expression.test.right.type="UnaryExpression"][body.statements.0.expression.test.right.operand.type="IdentifierExpression"][body.statements.0.expression.alternate.type="CallExpression"][body.statements.0.expression.alternate.callee.type="IdentifierExpression"]`
         )
         .first();
-    console.log(otherBase64ObfuscatorQuery);
     if (!!otherBase64ObfuscatorQuery.nodes.length) {
         var firstResult = otherBase64ObfuscatorQuery.nodes[0];
         var returnStatement = firstResult.body.statements[0];
