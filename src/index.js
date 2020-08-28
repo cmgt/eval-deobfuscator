@@ -28,8 +28,12 @@ const scriptInfo = [
         func: vendors.Geocomply
     },
     {
-        name: "shapesecurity.js",
-        func: vendors.ShapeSecurity
+        name: "shapesecuritybasic.js",
+        func: vendors.ShapeSecurityBasic
+    },
+    {
+        name: "perimeterx.js",
+        func: vendors.PerimeterX
     }
 ];
 

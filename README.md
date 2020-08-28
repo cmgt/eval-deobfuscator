@@ -7,7 +7,7 @@ A deobfuscator based on ```eval```ing deobfuscation functions.   This is done th
     node src/index.js
 
 ### Features
-
+The deobfuscators do not work by looking for hardcoded function names so they should continue to work regardless of updates (unless the obfuscation schemes change significantly).  
 Currently supported and tested scripts (more may work if they use any of the obfuscation techniques listed below this list):
 
     * Akami
@@ -15,7 +15,8 @@ Currently supported and tested scripts (more may work if they use any of the obf
     * Datadome
     * Distil
     * Geocomply
-    * Shape Security / F5
+    * Shape Security / F5 (basic implementation, non virtual machine based)
+    * PerimeterX
 
 Multiple different generic obfuscators supported:
     

@@ -34,7 +34,7 @@ function Geocomply(script) {
     util.convertComputedToStatic(script);
 }
 
-function ShapeSecurity(script) {
+function ShapeSecurityBasic(script) {
     /*
     Running the deobfuscated form of the script causes console.log outputs saying that "securemsg.js" tests are failing.
     /*
@@ -136,9 +136,101 @@ function ShapeSecurity(script) {
             });
         });
     }
+
+    util.simplifyLiteralConditions(script);
 }
 
-function PerimeterX(script) {}
+function ShapeSecurityVM(script) {
+    // TODO: FINISH
+    util.normalizeIdentifiers(script);
+}
+
+function PerimeterX(script) {
+    util.normalizeIdentifiers(script);
+
+    var scriptContext = util.createEmptyVmContext();
+    var base64XorDeobfuscators = script.query(
+        `FunctionDeclaration[isAsync=false][isGenerator=false][name.type="BindingIdentifier"][params.type="FormalParameters"][params.items.length=1][body.statements.0.type="ForStatement"][body.statements.0.init.type="VariableDeclaration"][body.statements.0.init.declarators.0.type="VariableDeclarator"][body.statements.0.init.declarators.0.init.type="CallExpression"][body.statements.0.init.declarators.0.init.callee.name="atob"]`
+    );
+    base64XorDeobfuscators.forEach((node) => {
+        var functionName = node.name.name;
+        // declare the function
+        vm.runInContext(util.getNodeCode(node), scriptContext);
+        // replace direct calls of them with actual values
+        script
+            .query(
+                `CallExpression[arguments.length=1][arguments.0.type="LiteralStringExpression"][callee.type="IdentifierExpression"][callee.name=${JSON.stringify(
+                    functionName
+                )}]`
+            )
+            .replace((callNode) => {
+                return util.appropriateLiteral(
+                    callNode,
+                    scriptContext[functionName](
+                        ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
+                    )
+                );
+            });
+        // replace referenced calls of them with actual values
+        script
+            .query(
+                `VariableDeclarator[init.type="IdentifierExpression"][init.name=${JSON.stringify(
+                    functionName
+                )}]`
+            )
+            .forEach((referenceNode) => {
+                script
+                    .query(
+                        `CallExpression[arguments.length=1][arguments.0.type="LiteralStringExpression"][callee.type="IdentifierExpression"][callee.name=${JSON.stringify(
+                            referenceNode.binding.name
+                        )}]`
+                    )
+                    .replace((callNode) => {
+                        return util.appropriateLiteral(
+                            callNode,
+                            scriptContext[functionName](
+                                ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
+                            )
+                        );
+                    });
+            });
+    });
+
+    const otherBase64ObfuscatorQuery = script
+        .query(
+            `FunctionDeclaration[isAsync=false][isGenerator=false][name.type="BindingIdentifier"][params.type="FormalParameters"][params.items.length=1][body.statements.length=1][body.statements.0.type="ReturnStatement"][body.statements.0.expression.type="ConditionalExpression"][body.statements.0.expression.test.left.value="function"][body.statements.0.expression.test.right.type="UnaryExpression"][body.statements.0.expression.test.right.operand.type="IdentifierExpression"][body.statements.0.expression.alternate.type="CallExpression"][body.statements.0.expression.alternate.callee.type="IdentifierExpression"]`
+        )
+        .first();
+    console.log(otherBase64ObfuscatorQuery);
+    if (!!otherBase64ObfuscatorQuery.nodes.length) {
+        var firstResult = otherBase64ObfuscatorQuery.nodes[0];
+        var returnStatement = firstResult.body.statements[0];
+        var referencedFunctionName = returnStatement.expression.test.right.operand.name;
+        var referencedFunctionQuery = script.query(
+            `VariableDeclarator[binding.name=${JSON.stringify(
+                referencedFunctionName
+            )}][init.type="CallExpression"][init.callee.type="FunctionExpression"]`
+        );
+
+        vm.runInContext(util.getFirstCode(referencedFunctionQuery), scriptContext);
+        vm.runInContext(util.getFirstCode(otherBase64ObfuscatorQuery), scriptContext);
+
+        script
+            .query(
+                `CallExpression[arguments.length=1][arguments.0.type="LiteralStringExpression"][callee.type="IdentifierExpression"][callee.name=${JSON.stringify(
+                    firstResult.name.name
+                )}]`
+            )
+            .replace((node) => {
+                return util.appropriateLiteral(
+                    node,
+                    scriptContext[firstResult.name.name](
+                        ...util.transformNodesIntoValues(node.arguments, scriptContext)
+                    )
+                );
+            });
+    }
+}
 
 module.exports = {
     Datadome: Datadome,
@@ -146,6 +238,7 @@ module.exports = {
     Akami: Akami,
     ArkoseLabs: ArkoseLabs,
     Geocomply: Geocomply,
-    ShapeSecurity: ShapeSecurity,
+    ShapeSecurityBasic: ShapeSecurityBasic,
+    ShapeSecurityVM: ShapeSecurityVM,
     PerimeterX: PerimeterX
 };

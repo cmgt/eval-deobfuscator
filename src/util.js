@@ -21,13 +21,14 @@ function createEmptyVmContext() {
     initialContext = {};
     initialContext.window = initialContext;
     initialContext.window.globalThis = initialContext;
+    initialContext.atob = function atob(a) {
+        return new Buffer(a, "base64").toString("binary");
+    };
+    initialContext.btoa = function btoa(b) {
+        return new Buffer(b).toString("base64");
+    };
 
     return vm.createContext(initialContext);
-}
-
-/* Evaluate a math expression with string operators */
-function comparator(operatorString, value1, value2) {
-    return eval(`"` + value1 + `"` + operatorString + value2);
 }
 
 function normalizeIdentifiers(script) {
@@ -142,6 +143,16 @@ function evaluateStringMathExpressions(script) {
     );
 }
 
+function simplifyLiteralConditions(script) {
+    script
+        .query(
+            `ConditionalExpression[test.value][consequent.value][alternate.value]` // get literal bool string and number conditionals
+        )
+        .replace((node) => {
+            return appropriateLiteral(node, eval(getNodeCode(node)));
+        });
+}
+
 /*
 This function combines string literals that are added together.
 For instance:
@@ -149,12 +160,17 @@ For instance:
 "a" + "b" + variable + "c" -> "ab" + variable + "c"
 */
 function mergeAddedStrings(script) {
-    const binaryAddStringsQueryText = `BinaryExpression[left.type="LiteralStringExpression"][right.type="LiteralStringExpression"]`;
-    replaceRecursive(script, binaryAddStringsQueryText, (node) => {
-        return new Shift.LiteralStringExpression({
-            value: node.left.value + node.right.value
-        });
-    });
+    replaceRecursive(
+        script,
+        BinaryExpression[(left.type = "LiteralStringExpression")][
+            (right.type = "LiteralStringExpression")
+        ],
+        (node) => {
+            return new Shift.LiteralStringExpression({
+                value: node.left.value + node.right.value
+            });
+        }
+    );
 }
 
 /*
@@ -179,7 +195,6 @@ TODO: Encode strings containing non printable and unicode characters.
 */
 function appropriateLiteral(currentNode, value) {
     var type = typeof value;
-
     if (value === undefined) {
         return new Shift.IdentifierExpression({
             name: "undefined"
@@ -210,10 +225,11 @@ function appropriateLiteral(currentNode, value) {
                     ]
                 });
             }
+        } else {
+            return new Shift.LiteralStringExpression({
+                value: value
+            });
         }
-        return new Shift.LiteralStringExpression({
-            value: value
-        });
     } else if (type === "boolean") {
         return new Shift.LiteralBooleanExpression({
             value: value
@@ -354,5 +370,6 @@ module.exports = {
     findOne: findOne,
     createEmptyVmContext: createEmptyVmContext,
     replacePlusStringWithIntegerValue: replacePlusStringWithIntegerValue,
-    evaluateStringMathExpressions: evaluateStringMathExpressions
+    evaluateStringMathExpressions: evaluateStringMathExpressions,
+    simplifyLiteralConditions: simplifyLiteralConditions
 };
