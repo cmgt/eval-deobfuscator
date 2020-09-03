@@ -14,17 +14,19 @@ Currently supported and tested scripts (more may work if they use any of the obf
     * ArkoseLabs
     * Datadome
     * Distil
-    * Geocomply
-    * Shape Security / F5 (basic implementation, non virtual machine based)
+    * Geocomply (string deobfuscation works but the deobfuscated version of the code does not run properly)
+    * Shape Security / F5 (non virtual machine based version)
     * PerimeterX
+    * Meetrics
+    * Imperva (work in progress)
 
 Multiple different generic obfuscators supported:
     
     * Array literal subsitution
-    * Obfuscator.io base64
     * Obfuscator.io array literal subsitution with function
+    * Obfuscator.io base64
+    * Obfuscator.io RC4
     * JScrambler (strings)
 
-### Other
-
-Will do major refactoring once more scripts are added and I identify more commonalities / abstractions.
+### Requests
+Open an issue to a request a new script.

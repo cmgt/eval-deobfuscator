@@ -16,6 +16,9 @@ function findOne(haystack, arr) {
     });
 }
 
+function formatAnonymousFnEval(text) {
+    return "false||" + text;
+}
 function createEmptyVmContext() {
     // jscrambler needs window
     initialContext = {};
@@ -79,34 +82,40 @@ function substituteArrayLiterals(script) {
 
 // Stolen from mass-beautifier
 function convertComputedToStatic(script) {
-    script
-        .query(`ComputedMemberExpression[expression.type="LiteralStringExpression"]`)
-        .replace((node) => {
+    replaceRecursive(
+        script,
+        `ComputedMemberExpression[expression.type="LiteralStringExpression"]`,
+        (node) => {
             const replacement = new Shift.StaticMemberExpression({
                 object: node.object,
                 property: node.expression.value
             });
             return shiftValidator.default(replacement) ? replacement : node;
-        });
+        }
+    );
 
-    script
-        .query(`ComputedMemberAssignmentTarget[expression.type="LiteralStringExpression"]`)
-        .replace((node) => {
+    replaceRecursive(
+        script,
+        `ComputedMemberAssignmentTarget[expression.type="LiteralStringExpression"]`,
+        (node) => {
             const replacement = new Shift.StaticMemberAssignmentTarget({
                 object: node.object,
                 property: node.expression.value
             });
             return shiftValidator.default(replacement) ? replacement : node;
-        });
+        }
+    );
 
-    script
-        .query(`ComputedPropertyName[expression.type="LiteralStringExpression"]`)
-        .replace((node) => {
+    replaceRecursive(
+        script,
+        `ComputedPropertyName[expression.type="LiteralStringExpression"]`,
+        (node) => {
             const replacement = new Shift.StaticPropertyName({
                 value: node.expression.value
             });
             return shiftValidator.default(replacement) ? replacement : node;
-        });
+        }
+    );
 }
 
 /*
@@ -162,9 +171,7 @@ For instance:
 function mergeAddedStrings(script) {
     replaceRecursive(
         script,
-        BinaryExpression[(left.type = "LiteralStringExpression")][
-            (right.type = "LiteralStringExpression")
-        ],
+        `BinaryExpression[left.type="LiteralStringExpression"][right.type="LiteralStringExpression"]`,
         (node) => {
             return new Shift.LiteralStringExpression({
                 value: node.left.value + node.right.value
@@ -177,14 +184,18 @@ function mergeAddedStrings(script) {
 This function calls repeatedly calls replace until there is no results remaining.
 */
 function replaceRecursive(script, query, replaceFunction) {
+    const maxRuns = 10; // to prevent bug in shift-refactor that makes this run forever and use up all the ram, cap the number of replaces at 10
+
+    var runs = 0;
     var result = script.query(query);
     var resultsCount = result.nodes.length;
-    while (resultsCount > 0) {
+    while (resultsCount > 0 && runs < maxRuns) {
         // keep replacing till we run out of nodes
         result.replace(replaceFunction);
 
         result = script.query(query);
         resultsCount = result.nodes.length;
+        runs += 1;
     }
 }
 
@@ -296,16 +307,14 @@ function combinePlusEqualStrings(script) {
 /* NOTE: This function makes a lot of assumptions about the program.  Make sure to normalizeIdentifiers before running this.
 It replaces all references to a variable with its initially assigned value, regardless of it is modified in the program.  This will probably break a LOT of scripts.
 */
-function replaceStaticStrings(script) {
+function replaceStaticValues(script) {
     staticStringVariables = script.query(
-        `VariableDeclarator[binding.type="BindingIdentifier"][init.type="LiteralStringExpression"]`
+        `VariableDeclarator[binding.type="BindingIdentifier"][init.type=/Literal.*/]`
     );
     staticStringVariables.forEach((node) => {
         var refs = script.query(`IdentifierExpression[name=${JSON.stringify(node.binding.name)}]`);
         refs.replace((refNode) => {
-            return new Shift.LiteralStringExpression({
-                value: node.init.value
-            });
+            return appropriateLiteral(refNode, node.init.value);
         });
     });
 }
@@ -351,6 +360,12 @@ function transformNodesIntoValues(nodes, context) {
             resultArray.push(node.value);
         } else if (type === "LiteralNullExpression") {
             resultArray.push(null);
+        } else if (type === "ArrayExpression") {
+            newArray = [];
+            node.elements.forEach((arrayItem) => {
+                newArray.push(transformNodesIntoValues([arrayItem], context));
+            });
+            resultArray.push(newArray);
         }
     });
     return resultArray;
@@ -364,12 +379,13 @@ module.exports = {
     getFirstCode: getFirstCode,
     appropriateLiteral: appropriateLiteral,
     combinePlusEqualStrings: combinePlusEqualStrings,
-    replaceStaticStrings: replaceStaticStrings,
+    replaceStaticValues: replaceStaticValues,
     normalizeIdentifiers: normalizeIdentifiers,
     transformNodesIntoValues: transformNodesIntoValues,
     findOne: findOne,
     createEmptyVmContext: createEmptyVmContext,
     replacePlusStringWithIntegerValue: replacePlusStringWithIntegerValue,
     evaluateStringMathExpressions: evaluateStringMathExpressions,
-    simplifyLiteralConditions: simplifyLiteralConditions
+    simplifyLiteralConditions: simplifyLiteralConditions,
+    formatAnonymousFnEval: formatAnonymousFnEval
 };

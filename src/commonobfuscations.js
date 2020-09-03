@@ -24,7 +24,7 @@ function undoObfuscatorIoLiteralSubsitution(script, scriptContext) {
     // get first big array
     const stringArrayQuery = script
         .query(
-            `VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
+            `Script > VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
         )
         .first();
 
@@ -79,7 +79,7 @@ function undoObfuscatorIoBase64(script, scriptContext) {
     // get first big array
     const stringArrayQuery = script
         .query(
-            `VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
+            `Script > VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
         )
         .first();
     // get first function assigned to variable that takes two arguments (this is the standard obfuscator.io deobfuscation function)
@@ -111,6 +111,62 @@ function undoObfuscatorIoBase64(script, scriptContext) {
             });
         });
 
+    stringArrayQuery.delete();
+    deobfuscationFunctionQuery.delete();
+}
+
+function undoObfuscatorIoRC4(script, scriptContext) {
+    // get first big array
+    const stringArrayQuery = script
+        .query(
+            `Script > VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
+        )
+        .first();
+    // get first function assigned to variable that takes two arguments (this is the standard obfuscator.io deobfuscation function)
+    const deobfuscationFunctionQuery = script
+        .query(
+            `VariableDeclarator[init.type="FunctionExpression"][init.params.items.length=2][init.name=null][init.body.statements.length>4]`
+        )
+        .first();
+    // find function that shifts the array
+    const shifterFunctionQuery = script
+        .query(
+            `ExpressionStatement[expression.type="CallExpression"][expression.callee.type="FunctionExpression"][expression.callee.isAsync=false][expression.callee.isGenerator=false][expression.callee.params.type="FormalParameters"][expression.callee.params.items.length=2][expression.callee.body.statements.0.type="VariableDeclarationStatement"][expression.callee.body.statements.0.declaration.declarators.0.init.type="FunctionExpression"][expression.arguments.length=2]`
+        )
+        .first();
+
+    if (
+        !stringArrayQuery.nodes.length ||
+        !deobfuscationFunctionQuery.nodes.length ||
+        !shifterFunctionQuery.nodes.length
+    ) {
+        return;
+    }
+
+    var deobfuscationFunctionName = deobfuscationFunctionQuery.nodes[0].binding.name;
+
+    // evaluate the obfuscated string array and deobfuscation function assignment
+    vm.runInContext(util.getFirstCode(stringArrayQuery), scriptContext);
+    vm.runInContext(util.getFirstCode(deobfuscationFunctionQuery), scriptContext);
+    vm.runInContext(util.getFirstCode(shifterFunctionQuery), scriptContext);
+    // Replace deobfuscation calls calls with real value
+    script
+        .query(
+            `CallExpression[callee.type="IdentifierExpression"][callee.name=${JSON.stringify(
+                deobfuscationFunctionName
+            )}][arguments.length=2][arguments.0.type="LiteralStringExpression"][arguments.1.type="LiteralStringExpression"]`
+        )
+        .replace((node) => {
+            console.log(node);
+            return util.appropriateLiteral(
+                node,
+                scriptContext[deobfuscationFunctionName](
+                    ...util.transformNodesIntoValues(node.arguments, scriptContext)
+                )
+            );
+        });
+
+    shifterFunctionQuery.delete();
     stringArrayQuery.delete();
     deobfuscationFunctionQuery.delete();
 }
@@ -244,6 +300,7 @@ function undoJscramblerString(script, scriptContext) {
 
 module.exports = {
     undoObfuscatorIoBase64: undoObfuscatorIoBase64,
+    undoObfuscatorIoRC4: undoObfuscatorIoRC4,
     substituteArrayLiterals: substituteArrayLiterals,
     undoObfuscatorIoLiteralSubsitution: undoObfuscatorIoLiteralSubsitution,
     undoJscramblerString: undoJscramblerString

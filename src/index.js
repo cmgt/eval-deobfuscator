@@ -34,13 +34,22 @@ const scriptInfo = [
     {
         name: "perimeterx.js",
         func: vendors.PerimeterX
+    },
+    {
+        name: "meetrics.js",
+        func: vendors.Meetrics
+    },
+    {
+        name: "imperva.js",
+        func: vendors.Imperva
     }
 ];
 
 scriptInfo.forEach((currentScriptInfo) => {
     var fileContents = fs.readFileSync(filesDirectory + currentScriptInfo.name, "utf8");
     var script = refactor(fileContents);
-    currentScriptInfo.func(script);
+
+    script = currentScriptInfo.func(script);
     fs.writeFileSync(outputDirectory + currentScriptInfo.name, script.print());
     console.log(
         "Deobfuscated " +
