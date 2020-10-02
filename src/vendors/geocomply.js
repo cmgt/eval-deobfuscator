@@ -13,4 +13,4 @@ module.exports = function Geocomply(script) {
     util.convertComputedToStatic(script);
 
     return script;
-}
+};

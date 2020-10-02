@@ -6,4 +6,4 @@ module.exports = function Datadome(script) {
     util.convertComputedToStatic(script);
 
     return script;
-}
+};

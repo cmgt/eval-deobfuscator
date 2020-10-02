@@ -101,7 +101,7 @@ module.exports = function ShapeSecurityBasic(script) {
             return new Shift.LiteralBooleanExpression({
                 value: scriptContext[trueFalseFunctionName](
                     ...util.transformNodesIntoValues(node.arguments, scriptContext)
-                )
+                ),
             });
         });
     }
@@ -109,4 +109,4 @@ module.exports = function ShapeSecurityBasic(script) {
     util.simplifyLiteralConditions(script);
 
     return script;
-}
+};

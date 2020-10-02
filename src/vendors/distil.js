@@ -6,4 +6,4 @@ module.exports = function Distil(script) {
     util.convertComputedToStatic(script);
 
     return script;
-}
+};

@@ -3828,7 +3828,7 @@ const nouns = [
     "zither",
     "zombie",
     "zone",
-    "zoology"
+    "zoology",
 ];
 const adjectives = [
     "aback",
@@ -4470,7 +4470,7 @@ const adjectives = [
     "zealous",
     "zesty",
     "zippy",
-    "zonked"
+    "zonked",
 ];
 
 const jsKeywords = Object.values(TokenType)

@@ -19,6 +19,8 @@ Currently supported and tested scripts (more may work if they use any of the obf
     * PerimeterX
     * Meetrics
     * Imperva (work in progress)
+    * Cloudflare anti-scraping
+    * ThreatMetrix
 
 Multiple different generic obfuscators supported:
     

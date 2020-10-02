@@ -8,41 +8,49 @@ const outputDirectory = "output/";
 const scriptInfo = [
     {
         name: "datadome.js",
-        func: vendors.Datadome
+        func: vendors.Datadome,
     },
     {
         name: "distil.js",
-        func: vendors.Distil
+        func: vendors.Distil,
     },
     {
         name: "akami.js",
-        func: vendors.Akami
+        func: vendors.Akami,
     },
     {
         name: "arkoselabs.js",
-        func: vendors.ArkoseLabs
+        func: vendors.ArkoseLabs,
     },
-    // geocomply takes a while because we have to query for a bunch of variables
-    {
-        name: "geocomply.js",
-        func: vendors.Geocomply
-    },
+    // geocomply takes a while because we have to query for a bunch of variables.  disabled by default because it takes forever and its partially broken.
+    // {
+    //     name: "geocomply.js",
+    //     func: vendors.Geocomply,
+    // },
     {
         name: "shapesecuritybasic.js",
-        func: vendors.ShapeSecurityBasic
+        func: vendors.ShapeSecurityBasic,
     },
     {
         name: "perimeterx.js",
-        func: vendors.PerimeterX
+        func: vendors.PerimeterX,
     },
     {
         name: "meetrics.js",
-        func: vendors.Meetrics
+        func: vendors.Meetrics,
     },
     {
         name: "imperva.js",
-        func: vendors.Imperva
-    }
+        func: vendors.Imperva,
+    },
+    {
+        name: "cloudflare.js",
+        func: vendors.Cloudflare,
+    },
+    {
+        name: "threatmetrix.js",
+        func: vendors.ThreatMetrix,
+    },
 ];
 
 scriptInfo.forEach((currentScriptInfo) => {
@@ -59,4 +67,7 @@ scriptInfo.forEach((currentScriptInfo) => {
             outputDirectory +
             currentScriptInfo.name
     );
+
+    script.session.cleanup();
+    delete script;
 });

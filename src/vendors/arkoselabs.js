@@ -7,4 +7,4 @@ module.exports = function ArkoseLabs(script) {
     util.convertComputedToStatic(script);
 
     return script;
-}
+};

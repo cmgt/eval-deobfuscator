@@ -66,7 +66,7 @@ function undoObfuscatorIoLiteralSubsitution(script, scriptContext) {
         )
         .replace((node) => {
             return new Shift.LiteralStringExpression({
-                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value)
+                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
             });
         });
 
@@ -107,7 +107,7 @@ function undoObfuscatorIoBase64(script, scriptContext) {
         )
         .replace((node) => {
             return new Shift.LiteralStringExpression({
-                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value)
+                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
             });
         });
 
@@ -119,7 +119,7 @@ function undoObfuscatorIoRC4(script, scriptContext) {
     // get first big array
     const stringArrayQuery = script
         .query(
-            `Script > VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
+            `VariableDeclarationStatement[declaration.declarators.length=1][declaration.declarators.0.init.type="ArrayExpression"][declaration.declarators.0.init.elements.length]`
         )
         .first();
     // get first function assigned to variable that takes two arguments (this is the standard obfuscator.io deobfuscation function)
@@ -140,6 +140,7 @@ function undoObfuscatorIoRC4(script, scriptContext) {
         !deobfuscationFunctionQuery.nodes.length ||
         !shifterFunctionQuery.nodes.length
     ) {
+        console.log("Couldnt find one of the functions");
         return;
     }
 
@@ -303,5 +304,5 @@ module.exports = {
     undoObfuscatorIoRC4: undoObfuscatorIoRC4,
     substituteArrayLiterals: substituteArrayLiterals,
     undoObfuscatorIoLiteralSubsitution: undoObfuscatorIoLiteralSubsitution,
-    undoJscramblerString: undoJscramblerString
+    undoJscramblerString: undoJscramblerString,
 };

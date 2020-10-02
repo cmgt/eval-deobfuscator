@@ -6,4 +6,4 @@ module.exports = function Akami(script) {
     util.convertComputedToStatic(script);
 
     return script;
-}
+};

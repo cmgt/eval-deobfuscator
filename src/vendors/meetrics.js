@@ -50,4 +50,4 @@ module.exports = function Meetrics(script) {
     });
 
     return script;
-}
+};

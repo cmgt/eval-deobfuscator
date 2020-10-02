@@ -88,4 +88,4 @@ module.exports = function PerimeterX(script) {
     }
 
     return script;
-}
+};

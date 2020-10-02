@@ -34,6 +34,14 @@ function createEmptyVmContext() {
     return vm.createContext(initialContext);
 }
 
+function nthParent(query, n) {
+    if (n == 0) {
+        return query;
+    } else if (n > 0) {
+        return nthParent(query.parents(), n - 1);
+    }
+}
+
 function normalizeIdentifiers(script) {
     const lookupTable = script.session.globalSession.getLookupTable();
     const idGenerator = new IdGenerator();
@@ -88,7 +96,7 @@ function convertComputedToStatic(script) {
         (node) => {
             const replacement = new Shift.StaticMemberExpression({
                 object: node.object,
-                property: node.expression.value
+                property: node.expression.value,
             });
             return shiftValidator.default(replacement) ? replacement : node;
         }
@@ -100,7 +108,7 @@ function convertComputedToStatic(script) {
         (node) => {
             const replacement = new Shift.StaticMemberAssignmentTarget({
                 object: node.object,
-                property: node.expression.value
+                property: node.expression.value,
             });
             return shiftValidator.default(replacement) ? replacement : node;
         }
@@ -111,7 +119,7 @@ function convertComputedToStatic(script) {
         `ComputedPropertyName[expression.type="LiteralStringExpression"]`,
         (node) => {
             const replacement = new Shift.StaticPropertyName({
-                value: node.expression.value
+                value: node.expression.value,
             });
             return shiftValidator.default(replacement) ? replacement : node;
         }
@@ -127,7 +135,7 @@ function replacePlusStringWithIntegerValue(script) {
         .query(`UnaryExpression[operator="+"][operand.type="LiteralStringExpression"]`)
         .replace((node) => {
             return new Shift.LiteralNumericExpression({
-                value: node.operand.value
+                value: node.operand.value,
             });
         });
 }
@@ -146,7 +154,7 @@ function evaluateStringMathExpressions(script) {
                     JSON.stringify(node.left.value) +
                         node.operator +
                         JSON.stringify(node.right.value)
-                )
+                ),
             });
         }
     );
@@ -174,7 +182,7 @@ function mergeAddedStrings(script) {
         `BinaryExpression[left.type="LiteralStringExpression"][right.type="LiteralStringExpression"]`,
         (node) => {
             return new Shift.LiteralStringExpression({
-                value: node.left.value + node.right.value
+                value: node.left.value + node.right.value,
             });
         }
     );
@@ -208,42 +216,42 @@ function appropriateLiteral(currentNode, value) {
     var type = typeof value;
     if (value === undefined) {
         return new Shift.IdentifierExpression({
-            name: "undefined"
+            name: "undefined",
         });
     } else if (value === null) {
         return new Shift.LiteralNullExpression({});
     } else if (type === "number") {
         return new Shift.LiteralNumericExpression({
-            value: value
+            value: value,
         });
     } else if (type === "string") {
         if (value.includes(String.fromCharCode(0))) {
             if (value.length === 1) {
                 // if the string is just a null character, just make it ""
                 return new Shift.LiteralStringExpression({
-                    value: ""
+                    value: "",
                 });
             } else {
                 // if the string contains a null character, escape it
                 return new Shift.CallExpression({
                     callee: new Shift.IdentifierExpression({
-                        name: "unescape"
+                        name: "unescape",
                     }),
                     arguments: [
                         new Shift.LiteralStringExpression({
-                            value: escape(value)
-                        })
-                    ]
+                            value: escape(value),
+                        }),
+                    ],
                 });
             }
         } else {
             return new Shift.LiteralStringExpression({
-                value: value
+                value: value,
             });
         }
     } else if (type === "boolean") {
         return new Shift.LiteralBooleanExpression({
-            value: value
+            value: value,
         });
     }
     // otherwise just return existing node
@@ -295,11 +303,11 @@ function combinePlusEqualStrings(script) {
 
             return new Shift.VariableDeclarator({
                 binding: new Shift.BindingIdentifier({
-                    name: variableName
+                    name: variableName,
                 }),
                 init: new Shift.LiteralStringExpression({
-                    value: newValue
-                })
+                    value: newValue,
+                }),
             });
         });
 }
@@ -387,5 +395,6 @@ module.exports = {
     replacePlusStringWithIntegerValue: replacePlusStringWithIntegerValue,
     evaluateStringMathExpressions: evaluateStringMathExpressions,
     simplifyLiteralConditions: simplifyLiteralConditions,
-    formatAnonymousFnEval: formatAnonymousFnEval
+    formatAnonymousFnEval: formatAnonymousFnEval,
+    nthParent: nthParent,
 };

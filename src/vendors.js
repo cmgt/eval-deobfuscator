@@ -7,5 +7,7 @@ module.exports = {
     ShapeSecurityBasic: require("./vendors/shapesecuritybasic"),
     PerimeterX: require("./vendors/perimeterx"),
     Meetrics: require("./vendors/meetrics"),
-    Imperva: require("./vendors/imperva")
+    Imperva: require("./vendors/imperva"),
+    Cloudflare: require("./vendors/cloudflare"),
+    ThreatMetrix: require("./vendors/threatmetrix"),
 };
