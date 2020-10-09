@@ -36,13 +36,24 @@ module.exports = function ShapeSecurityBasic(script) {
         var functionName = node.name.name;
         var calls = script.query(`CallExpression[callee.name=${JSON.stringify(functionName)}]`);
         calls.replace((callNode) => {
-            return util.appropriateLiteral(
-                callNode,
-                scriptContext[functionName](
-                    ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-                )
-            );
+            try {
+                return util.appropriateLiteral(
+                    callNode,
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                );
+            } catch (e) {
+                return callNode;
+            }
         });
+
+        // calls.replace((callNode) => {
+        //     return util.appropriateLiteral(
+        //         callNode,
+        //         scriptContext[functionName](
+        //             ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
+        //         )
+        //     );
+        // });
     });
 
     /*
@@ -67,13 +78,15 @@ module.exports = function ShapeSecurityBasic(script) {
         const toStringRadixDeobfuscatorCalls = script.query(
             `CallExpression[callee.name=${JSON.stringify(toStringRadixDeobfuscatorName)}]`
         );
-        toStringRadixDeobfuscatorCalls.replace((node) => {
-            return util.appropriateLiteral(
-                node,
-                scriptContext[toStringRadixDeobfuscatorName](
-                    ...util.transformNodesIntoValues(node.arguments, scriptContext)
-                )
-            );
+        toStringRadixDeobfuscatorCalls.replace((callNode) => {
+            try {
+                return util.appropriateLiteral(
+                    callNode,
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                );
+            } catch (e) {
+                return callNode;
+            }
         });
     }
 
@@ -97,13 +110,23 @@ module.exports = function ShapeSecurityBasic(script) {
         const trueFalseFunctionCalls = script.query(
             `CallExpression[callee.name=${JSON.stringify(trueFalseFunctionName)}]`
         );
-        trueFalseFunctionCalls.replace((node) => {
-            return new Shift.LiteralBooleanExpression({
-                value: scriptContext[trueFalseFunctionName](
-                    ...util.transformNodesIntoValues(node.arguments, scriptContext)
-                ),
-            });
+        trueFalseFunctionCalls.replace((callNode) => {
+            try {
+                return util.appropriateLiteral(
+                    callNode,
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                );
+            } catch (e) {
+                return callNode;
+            }
         });
+        // trueFalseFunctionCalls.replace((node) => {
+        //     return new Shift.LiteralBooleanExpression({
+        //         value: scriptContext[trueFalseFunctionName](
+        //             ...util.transformNodesIntoValues(node.arguments, scriptContext)
+        //         ),
+        //     });
+        // });
     }
 
     util.simplifyLiteralConditions(script);

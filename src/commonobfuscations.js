@@ -64,11 +64,12 @@ function undoObfuscatorIoLiteralSubsitution(script, scriptContext) {
                 deobfuscationFunctionName
             )}][arguments.length=1][arguments.0.type="LiteralStringExpression"]`
         )
-        .replace((node) => {
-            return new Shift.LiteralStringExpression({
-                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
-            });
-        });
+        .replace((node) =>
+            util.appropriateLiteral(node, vm.runInContext(util.getNodeCode(node), scriptContext))
+        );
+    // return new Shift.LiteralStringExpression({
+    //     value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
+    // });
 
     stringArrayQuery.delete();
     deobfuscationFunctionQuery.delete();
@@ -105,11 +106,15 @@ function undoObfuscatorIoBase64(script, scriptContext) {
                 deobfuscationFunctionName
             )}][arguments.length=1][arguments.0.type="LiteralStringExpression"]`
         )
-        .replace((node) => {
-            return new Shift.LiteralStringExpression({
-                value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
-            });
-        });
+        .replace((node) =>
+            util.appropriateLiteral(node, vm.runInContext(util.getNodeCode(node), scriptContext))
+        );
+
+    // .replace((node) => {
+    //     return new Shift.LiteralStringExpression({
+    //         value: scriptContext[deobfuscationFunctionName](node.arguments[0].value),
+    //     });
+    // });
 
     stringArrayQuery.delete();
     deobfuscationFunctionQuery.delete();
@@ -157,15 +162,19 @@ function undoObfuscatorIoRC4(script, scriptContext) {
                 deobfuscationFunctionName
             )}][arguments.length=2][arguments.0.type="LiteralStringExpression"][arguments.1.type="LiteralStringExpression"]`
         )
-        .replace((node) => {
-            console.log(node);
-            return util.appropriateLiteral(
-                node,
-                scriptContext[deobfuscationFunctionName](
-                    ...util.transformNodesIntoValues(node.arguments, scriptContext)
-                )
-            );
-        });
+        .replace((node) =>
+            util.appropriateLiteral(node, vm.runInContext(util.getNodeCode(node), scriptContext))
+        );
+
+    // .replace((node) => {
+    //     console.log(node);
+    //     return util.appropriateLiteral(
+    //         node,
+    //         scriptContext[deobfuscationFunctionName](
+    //             ...util.transformNodesIntoValues(node.arguments, scriptContext)
+    //         )
+    //     );
+    // });
 
     shifterFunctionQuery.delete();
     stringArrayQuery.delete();

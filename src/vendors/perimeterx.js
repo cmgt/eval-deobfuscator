@@ -20,14 +20,13 @@ module.exports = function PerimeterX(script) {
                     functionName
                 )}]`
             )
-            .replace((callNode) => {
-                return util.appropriateLiteral(
+            .replace((callNode) =>
+                util.appropriateLiteral(
                     callNode,
-                    scriptContext[functionName](
-                        ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-                    )
-                );
-            });
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                )
+            );
+
         // replace referenced calls of them with actual values
         script
             .query(
@@ -36,20 +35,19 @@ module.exports = function PerimeterX(script) {
                 )}]`
             )
             .forEach((referenceNode) => {
+                vm.runInContext(util.getNodeCode(referenceNode), scriptContext);
                 script
                     .query(
                         `CallExpression[arguments.length=1][arguments.0.type="LiteralStringExpression"][callee.type="IdentifierExpression"][callee.name=${JSON.stringify(
                             referenceNode.binding.name
                         )}]`
                     )
-                    .replace((callNode) => {
-                        return util.appropriateLiteral(
+                    .replace((callNode) =>
+                        util.appropriateLiteral(
                             callNode,
-                            scriptContext[functionName](
-                                ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-                            )
-                        );
-                    });
+                            vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                        )
+                    );
             });
     });
 
@@ -77,14 +75,12 @@ module.exports = function PerimeterX(script) {
                     firstResult.name.name
                 )}]`
             )
-            .replace((node) => {
-                return util.appropriateLiteral(
+            .replace((node) =>
+                util.appropriateLiteral(
                     node,
-                    scriptContext[firstResult.name.name](
-                        ...util.transformNodesIntoValues(node.arguments, scriptContext)
-                    )
-                );
-            });
+                    vm.runInContext(util.getNodeCode(node), scriptContext)
+                )
+            );
     }
 
     return script;

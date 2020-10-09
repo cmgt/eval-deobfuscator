@@ -21,14 +21,12 @@ module.exports = function Meetrics(script) {
                     functionName
                 )}]`
             )
-            .replace((callNode) => {
-                return util.appropriateLiteral(
+            .replace((callNode) =>
+                util.appropriateLiteral(
                     callNode,
-                    scriptContext[functionName](
-                        ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-                    )
-                );
-            });
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                )
+            );
     });
     stringDeobfuscatorFunction.forEach((node) => {
         var functionName = node.name.name;
@@ -39,14 +37,12 @@ module.exports = function Meetrics(script) {
                     functionName
                 )}]`
             )
-            .replace((callNode) => {
-                return util.appropriateLiteral(
+            .replace((callNode) =>
+                util.appropriateLiteral(
                     callNode,
-                    scriptContext[functionName](
-                        ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-                    )
-                );
-            });
+                    vm.runInContext(util.getNodeCode(callNode), scriptContext)
+                )
+            );
     });
 
     return script;
