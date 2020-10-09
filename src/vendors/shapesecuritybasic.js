@@ -45,15 +45,6 @@ module.exports = function ShapeSecurityBasic(script) {
                 return callNode;
             }
         });
-
-        // calls.replace((callNode) => {
-        //     return util.appropriateLiteral(
-        //         callNode,
-        //         scriptContext[functionName](
-        //             ...util.transformNodesIntoValues(callNode.arguments, scriptContext)
-        //         )
-        //     );
-        // });
     });
 
     /*
@@ -120,13 +111,6 @@ module.exports = function ShapeSecurityBasic(script) {
                 return callNode;
             }
         });
-        // trueFalseFunctionCalls.replace((node) => {
-        //     return new Shift.LiteralBooleanExpression({
-        //         value: scriptContext[trueFalseFunctionName](
-        //             ...util.transformNodesIntoValues(node.arguments, scriptContext)
-        //         ),
-        //     });
-        // });
     }
 
     util.simplifyLiteralConditions(script);
